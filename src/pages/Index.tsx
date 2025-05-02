@@ -5,6 +5,7 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { BotPreview } from '@/components/BotPreview';
 import { DeploymentStatus } from '@/components/DeploymentStatus';
+import { ApiSettings } from '@/components/ApiSettings';
 import { useChat } from '@/hooks/useChat';
 import { useDeployment } from '@/hooks/useDeployment';
 import { ArrowRightIcon } from 'lucide-react';
@@ -14,21 +15,26 @@ const WELCOME_MESSAGE = "Hi! I'm the Discord Bot Wizard. Describe what kind of D
 const Index = () => {
   const [step, setStep] = useState<'chat' | 'preview' | 'deployment'>('chat');
   
-  // Chat state
-  const { messages, isLoading, sendMessage, botData } = useChat({
+  // Chat state with Claude API integration
+  const { 
+    messages, 
+    isLoading, 
+    sendMessage, 
+    botData, 
+    setApiKey: setClaudeApiKey,
+    apiKey: claudeApiKey
+  } = useChat({
     initialMessages: [{ role: 'assistant', content: WELCOME_MESSAGE }]
   });
   
-  // Deployment state
+  // Deployment state with API integration
   const { 
     status: deploymentStatus, 
     deployBot, 
-    reset: resetDeployment 
-  } = useDeployment({
-    onComplete: () => {
-      // In a real app, we would redirect to a bot management page
-    }
-  });
+    reset: resetDeployment,
+    setApiKey: setDeploymentApiKey,
+    apiKey: deploymentApiKey
+  } = useDeployment();
 
   const handleConfirmBot = () => {
     setStep('deployment');
@@ -49,8 +55,14 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-discord-darkest">
       {/* Header */}
-      <header className="border-b border-secondary p-4">
+      <header className="border-b border-secondary p-4 flex justify-between items-center">
         <Logo />
+        <ApiSettings 
+          claudeApiKey={claudeApiKey}
+          deploymentApiKey={deploymentApiKey}
+          onClaudeApiKeyChange={setClaudeApiKey}
+          onDeploymentApiKeyChange={setDeploymentApiKey}
+        />
       </header>
       
       {/* Main Content */}
@@ -113,7 +125,7 @@ const Index = () => {
         {step === 'deployment' && botData && (
           <div className="flex-1 flex items-center justify-center">
             <DeploymentStatus 
-              status={deploymentStatus as any}
+              status={deploymentStatus}
               botName={botData.name}
               onDone={handleDeploymentDone}
             />
@@ -121,11 +133,23 @@ const Index = () => {
         )}
       </main>
       
-      {/* Footer */}
-      <footer className="border-t border-secondary p-4 text-center">
-        <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Discord Bot Wizard. This is a demo application.
-        </p>
+      {/* Footer with API status indicators */}
+      <footer className="border-t border-secondary p-4">
+        <div className="flex justify-between items-center max-w-4xl mx-auto w-full">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Discord Bot Wizard
+          </p>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <div className={`h-2 w-2 rounded-full ${claudeApiKey ? 'bg-discord-green' : 'bg-discord-red'}`}></div>
+              <span className="text-xs text-muted-foreground">Claude API</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className={`h-2 w-2 rounded-full ${deploymentApiKey ? 'bg-discord-green' : 'bg-discord-red'}`}></div>
+              <span className="text-xs text-muted-foreground">Deployment API</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

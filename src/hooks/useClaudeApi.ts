@@ -31,7 +31,7 @@ export const useClaudeApi = (options?: ClaudeApiOptions) => {
       setError(error);
       toast({
         title: "API Key Required",
-        description: "Please provide a Claude API key to continue",
+        description: "Please configure your Claude API key in settings",
         variant: "destructive",
       });
       return null;
