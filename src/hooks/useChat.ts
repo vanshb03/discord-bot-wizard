@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useClaudeApi, ClaudeApiOptions } from '@/hooks/useClaudeApi';
 
 export interface Message {
   content: string;
@@ -8,25 +8,120 @@ export interface Message {
 
 interface UseChatOptions {
   initialMessages?: Message[];
-  // In a real app, we would connect to Claude API
-  // apiKey?: string;
+  claudeOptions?: ClaudeApiOptions;
 }
 
 export const useChat = (options: UseChatOptions = {}) => {
   const [messages, setMessages] = useState<Message[]>(options.initialMessages || []);
-  const [isLoading, setIsLoading] = useState(false);
   const [botData, setBotData] = useState<{
     name: string;
     description: string;
     features: { name: string; description: string }[];
   } | null>(null);
+  
+  const {
+    sendMessage: sendToClaudeApi,
+    isLoading,
+    setApiKey,
+    apiKey
+  } = useClaudeApi(options.claudeOptions);
 
-  // Mock AI response generator - in a real app, this would call Claude API
+  // Process the bot features from Claude's response
+  const extractBotData = (content: string): {
+    name: string;
+    description: string;
+    features: { name: string; description: string }[];
+  } => {
+    try {
+      // This is a simplified extraction logic - in a real app, you'd use more robust parsing
+      const featureRegex = /- ([^:]+): ([^\n]+)/g;
+      const features: { name: string; description: string }[] = [];
+      let match;
+      
+      while ((match = featureRegex.exec(content)) !== null) {
+        features.push({
+          name: match[1].trim(),
+          description: match[2].trim()
+        });
+      }
+
+      // Extract name
+      const nameRegex = /bot called "([^"]+)"/i;
+      const nameMatch = content.match(nameRegex);
+      const name = nameMatch ? nameMatch[1] : 'DiscordAssistant';
+
+      // Extract description
+      const descriptionRegex = /Discord bot that ([^\.]+)/i;
+      const descriptionMatch = content.match(descriptionRegex);
+      const description = descriptionMatch 
+        ? `A Discord bot that ${descriptionMatch[1]}`
+        : "A custom Discord bot";
+
+      return {
+        name,
+        description,
+        features: features.length > 0 ? features : [{
+          name: 'Custom Commands',
+          description: 'Create custom responses to specific commands.'
+        }]
+      };
+    } catch (error) {
+      console.error('Error parsing bot data:', error);
+      return {
+        name: 'DiscordAssistant',
+        description: 'A custom Discord bot',
+        features: [{
+          name: 'Custom Commands',
+          description: 'Create custom responses to specific commands.'
+        }]
+      };
+    }
+  };
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
+    // Add user message
+    const userMessage: Message = { role: 'user', content };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      if (apiKey) {
+        // Use Claude API
+        const claudeMessages = [...messages, userMessage].map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+        const response = await sendToClaudeApi(claudeMessages);
+        
+        if (response) {
+          // Add assistant response
+          const assistantMessage: Message = { 
+            role: 'assistant', 
+            content: response.content 
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          
+          // Extract bot data from response
+          const newBotData = extractBotData(response.content);
+          setBotData(newBotData);
+        }
+      } else {
+        // Fallback to mock response if no API key is set
+        await mockGenerateBotResponse(content);
+      }
+    } catch (error) {
+      console.error('Error generating response:', error);
+    }
+  };
+
+  // Mock AI response generator as fallback
   const mockGenerateBotResponse = async (userMessage: string) => {
     // Wait for a simulated delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Simple logic for demo purposes
+    // Use the existing mock logic
     const lowerMessage = userMessage.toLowerCase();
     
     // Simple logic to extract bot features from the message
@@ -92,29 +187,9 @@ export const useChat = (options: UseChatOptions = {}) => {
     setBotData(newBotData);
     
     // Return a response message
-    return `I can create a Discord bot called "${botName}" with the following features:\n\n${features.map(f => `- ${f.name}: ${f.description}`).join('\n')}\n\nIs this what you're looking for? If you want to make any changes, let me know.`;
-  };
-
-  const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
-
-    // Add user message
-    const userMessage: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      // Get response from mock Claude API
-      const responseContent = await mockGenerateBotResponse(content);
-      
-      // Add assistant response
-      const assistantMessage: Message = { role: 'assistant', content: responseContent };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Error generating response:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    const responseContent = `I can create a Discord bot called "${botName}" with the following features:\n\n${features.map(f => `- ${f.name}: ${f.description}`).join('\n')}\n\nIs this what you're looking for? If you want to make any changes, let me know.`;
+    
+    setMessages(prev => [...prev, { role: 'assistant', content: responseContent }]);
   };
 
   const clearMessages = () => {
@@ -127,6 +202,8 @@ export const useChat = (options: UseChatOptions = {}) => {
     isLoading,
     sendMessage,
     clearMessages,
-    botData
+    botData,
+    setApiKey,
+    apiKey
   };
 };
