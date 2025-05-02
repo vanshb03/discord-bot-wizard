@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+// Make sure this matches the type in DeploymentStatus.tsx
 type DeploymentStatus = 'idle' | 'preparing' | 'deploying' | 'complete' | 'error';
 
 export interface DeploymentOptions {

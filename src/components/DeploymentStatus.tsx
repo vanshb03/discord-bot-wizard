@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-type Status = 'preparing' | 'deploying' | 'complete' | 'error';
+type Status = 'idle' | 'preparing' | 'deploying' | 'complete' | 'error';
 
 interface DeploymentStatusProps {
   status: Status;
@@ -21,6 +21,13 @@ export const DeploymentStatus = ({
 }: DeploymentStatusProps) => {
   const getStatusContent = () => {
     switch (status) {
+      case 'idle':
+        return {
+          title: "Ready for Deployment",
+          badge: <Badge className="bg-discord-blurple">Ready</Badge>,
+          message: `${botName} is ready to be deployed.`,
+          showLoader: false
+        };
       case 'preparing':
         return {
           title: "Preparing Deployment",
