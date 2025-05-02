@@ -68,7 +68,7 @@ export const ApiSettings = ({
               placeholder="Enter deployment API key"
               className="bg-discord-darkest border-secondary text-discord-white"
             />
-            <p className="text-xs text-muted-foreground">Required to deploy your bot to Cloud Run.</p>
+            <p className="text-xs text-muted-foreground">Optional for generating downloadable bot files.</p>
           </div>
         </div>
       </SheetContent>

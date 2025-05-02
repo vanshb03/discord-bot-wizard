@@ -33,7 +33,9 @@ const Index = () => {
     deployBot, 
     reset: resetDeployment,
     setApiKey: setDeploymentApiKey,
-    apiKey: deploymentApiKey
+    apiKey: deploymentApiKey,
+    downloadUrl,
+    setupInstructions
   } = useDeployment();
 
   const handleConfirmBot = () => {
@@ -128,6 +130,8 @@ const Index = () => {
               status={deploymentStatus}
               botName={botData.name}
               onDone={handleDeploymentDone}
+              downloadUrl={downloadUrl}
+              setupInstructions={setupInstructions}
             />
           </div>
         )}

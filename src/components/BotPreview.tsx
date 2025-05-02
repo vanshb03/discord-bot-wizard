@@ -55,7 +55,7 @@ export const BotPreview = ({
           Edit Bot
         </Button>
         <Button onClick={onConfirm} className="bg-discord-blurple hover:bg-discord-blurple/80">
-          Deploy Bot
+          Generate Bot
         </Button>
       </CardFooter>
     </Card>

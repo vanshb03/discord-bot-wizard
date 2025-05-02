@@ -3,56 +3,62 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from 'react-markdown';
 
-type Status = 'idle' | 'preparing' | 'deploying' | 'complete' | 'error';
+type Status = 'idle' | 'preparing' | 'generating' | 'complete' | 'error';
 
 interface DeploymentStatusProps {
   status: Status;
   botName: string;
   onDone?: () => void;
   errorMessage?: string;
+  downloadUrl?: string | null;
+  setupInstructions?: string | null;
 }
 
 export const DeploymentStatus = ({ 
   status, 
   botName,
   onDone,
-  errorMessage = "An error occurred during deployment."
+  errorMessage = "An error occurred during generation.",
+  downloadUrl,
+  setupInstructions
 }: DeploymentStatusProps) => {
   const getStatusContent = () => {
     switch (status) {
       case 'idle':
         return {
-          title: "Ready for Deployment",
+          title: "Ready to Generate",
           badge: <Badge className="bg-discord-blurple">Ready</Badge>,
-          message: `${botName} is ready to be deployed.`,
+          message: `${botName} is ready to be generated.`,
           showLoader: false
         };
       case 'preparing':
         return {
-          title: "Preparing Deployment",
+          title: "Preparing Bot Files",
           badge: <Badge className="bg-discord-yellow text-black">Preparing</Badge>,
-          message: `Setting up ${botName} for deployment...`,
+          message: `Setting up ${botName} for generation...`,
           showLoader: true
         };
-      case 'deploying':
+      case 'generating':
         return {
-          title: "Deploying Bot",
-          badge: <Badge className="bg-discord-blurple">Deploying</Badge>,
-          message: `Deploying ${botName} to Cloud Run...`,
+          title: "Generating Bot",
+          badge: <Badge className="bg-discord-blurple">Generating</Badge>,
+          message: `Generating code for ${botName}...`,
           showLoader: true
         };
       case 'complete':
         return {
-          title: "Deployment Complete",
+          title: "Bot Generated",
           badge: <Badge className="bg-discord-green">Complete</Badge>,
-          message: `${botName} has been successfully deployed!`,
+          message: `${botName} has been successfully generated!`,
           showLoader: false,
-          showButton: true
+          showDownload: true,
+          showInstructions: true
         };
       case 'error':
         return {
-          title: "Deployment Failed",
+          title: "Generation Failed",
           badge: <Badge className="bg-discord-red">Error</Badge>,
           message: errorMessage,
           showLoader: false,
@@ -62,7 +68,7 @@ export const DeploymentStatus = ({
         return {
           title: "Unknown Status",
           badge: <Badge>Unknown</Badge>,
-          message: "Unknown deployment status",
+          message: "Unknown generation status",
           showLoader: false
         };
     }
@@ -85,12 +91,39 @@ export const DeploymentStatus = ({
           </div>
         )}
         
-        {statusContent.showButton && onDone && (
+        {statusContent.showDownload && downloadUrl && (
+          <Button 
+            className="w-full bg-discord-green hover:bg-discord-green/80 mb-4"
+            onClick={() => {
+              // Create a temporary anchor element to trigger download
+              const a = document.createElement('a');
+              a.href = downloadUrl;
+              a.download = `${botName.toLowerCase()}-bot.js`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              // Clean up the URL object to avoid memory leaks
+              setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+            }}
+          >
+            Download Bot Files
+          </Button>
+        )}
+        
+        {statusContent.showInstructions && setupInstructions && (
+          <div className="mt-6 p-4 bg-discord-darkest rounded-md overflow-auto max-h-80 text-sm prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown>
+              {setupInstructions}
+            </ReactMarkdown>
+          </div>
+        )}
+        
+        {(statusContent.showButton || status === 'complete') && onDone && (
           <Button 
             onClick={onDone} 
-            className="w-full bg-discord-blurple hover:bg-discord-blurple/80"
+            className="w-full bg-discord-blurple hover:bg-discord-blurple/80 mt-4"
           >
-            {status === 'complete' ? 'View Bot Details' : 'Try Again'}
+            {status === 'complete' ? 'Create Another Bot' : 'Try Again'}
           </Button>
         )}
       </CardContent>

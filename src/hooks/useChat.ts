@@ -96,15 +96,28 @@ export const useChat = (options: UseChatOptions = {}) => {
         const response = await sendToClaudeApi(claudeMessages);
         
         if (response) {
+          // Extract text from the response content array
+          let responseText = '';
+          if (Array.isArray(response.content)) {
+            // New API format: content is an array of objects with text property
+            responseText = response.content
+              .filter(item => item.type === 'text')
+              .map(item => item.text)
+              .join('');
+          } else if (typeof response.content === 'string') {
+            // Legacy format or already processed: content is a string
+            responseText = response.content;
+          }
+          
           // Add assistant response
           const assistantMessage: Message = { 
             role: 'assistant', 
-            content: response.content 
+            content: responseText || 'No response content found.'
           };
           setMessages(prev => [...prev, assistantMessage]);
           
           // Extract bot data from response
-          const newBotData = extractBotData(response.content);
+          const newBotData = extractBotData(responseText);
           setBotData(newBotData);
         }
       } else {

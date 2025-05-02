@@ -13,10 +13,16 @@ interface ClaudeMessage {
   content: string;
 }
 
+interface ClaudeResponseContent {
+  type: string;
+  text: string;
+}
+
 interface ClaudeResponse {
   id: string;
-  content: string;
+  content: ClaudeResponseContent[];
   model: string;
+  type: string;
 }
 
 export const useClaudeApi = (options?: ClaudeApiOptions) => {
@@ -41,16 +47,18 @@ export const useClaudeApi = (options?: ClaudeApiOptions) => {
     setError(null);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/claude/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: modelOverride || options?.model || 'claude-3-sonnet-20240229',
+          model: modelOverride || options?.model || 'claude-3-7-sonnet-20250219',
           max_tokens: 1000,
+          system: "You are a Discord bot code generator. Focus on providing concise, practical code snippets without lengthy explanations. Keep your responses short and direct. Structure responses with minimal explanation and well-commented code blocks. Do not suggest alternatives unless explicitly asked. Your goal is to create a working Discord bot based on user requirements.",
           messages: messages
         })
       });
@@ -61,6 +69,7 @@ export const useClaudeApi = (options?: ClaudeApiOptions) => {
       }
 
       const data = await response.json();
+      console.log('Claude API response:', data);
       return data as ClaudeResponse;
     } catch (err) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error occurred');

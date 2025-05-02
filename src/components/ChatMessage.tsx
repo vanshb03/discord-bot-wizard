@@ -2,6 +2,7 @@
 import React from 'react';
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessageProps {
   message: string;
@@ -33,7 +34,11 @@ export const ChatMessage = ({
           ? "bg-discord-blurple text-white rounded-br-none" 
           : "bg-secondary text-white rounded-bl-none"
       )}>
-        <p className="text-sm md:text-base whitespace-pre-wrap">{message}</p>
+        <div className="text-sm md:text-base prose prose-invert prose-sm max-w-none">
+          <ReactMarkdown>
+            {message}
+          </ReactMarkdown>
+        </div>
       </div>
 
       {isUser && (
